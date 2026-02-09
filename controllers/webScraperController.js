@@ -1,4 +1,8 @@
-import { processWebUrl, processMultipleUrls } from '../webScraper.js';
+import { scrapeRawContent } from "../webScraper.js";
+
+//import { processWebUrl, processMultipleUrls } from '../webScraper.js';
+import runPipeline from '../multimodal/pipeline.js';
+
 
 /**
  * Controller function to handle single URL scraping
@@ -135,6 +139,63 @@ export async function getScraperStatus(req, res) {
     console.error('Error in getScraperStatus:', error);
     res.status(500).json({
       status: 'error',
+      message: error.message
+    });
+  }
+}
+
+/**
+ * Controller function to handle multimodal processing for a single URL
+ */
+export async function scrapeMultimodalUrl(req, res) {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({
+        error: 'URL is required',
+        message: 'Please provide a URL to process multimodally'
+      });
+    }
+
+    // Validate URL
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({
+        error: 'Invalid URL format',
+        message: 'Please provide a valid URL'
+      });
+    }
+
+    console.log(`Received multimodal request for: ${url}`);
+
+    // 1️⃣ Scrape the web page (reuse existing logic)
+    const scrapedData = await scrapeRawContent(url);
+
+    /**
+     * scrapedData should look like:
+     * {
+     *   text: "...",
+     *   images: [...],
+     *   tables: [...]
+     * }
+     */
+
+    // 2️⃣ Run multimodal pipeline
+    const multimodalResult = await runPipeline(scrapedData);
+
+    // 3️⃣ Return result
+    res.json({
+      message: 'Multimodal processing successful',
+      url,
+      result: multimodalResult
+    });
+
+  } catch (error) {
+    console.error('Error in scrapeMultimodalUrl:', error);
+    res.status(500).json({
+      error: 'Failed multimodal processing',
       message: error.message
     });
   }

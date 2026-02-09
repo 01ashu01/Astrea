@@ -1,5 +1,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
+console.log("JINA KEY LOADED:", !!process.env.JINA_API_KEY);
+
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';

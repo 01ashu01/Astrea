@@ -184,3 +184,40 @@ if (import.meta.url === new URL(import.meta.resolve('./')).href + 'webScraper.js
     .catch(error => console.error('Processing failed:', error));
   */
 }
+
+/**
+ * Scrape raw content ONLY (no embeddings, no Pinecone, no Gemini)
+ * Used for multimodal pipeline
+ */
+export async function scrapeRawContent(url) {
+  console.log(`Raw scraping (no embeddings): ${url}`);
+
+  const response = await axios.get(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    timeout: 10000
+  });
+
+  const $ = cheerio.load(response.data);
+
+  $("script, style, nav, footer").remove();
+
+  const text = $("body")
+    .text()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const images = [];
+  $("img").each((_, el) => {
+    const src = $(el).attr("src");
+    if (src) images.push(src);
+  });
+
+  return {
+    text,
+    images,
+    tables: [] // future extension
+  };
+}
